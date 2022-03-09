@@ -1,6 +1,9 @@
 <script>
 	import HeaderName from './HeaderName.svelte';
 	import Todo from './Todo.svelte';
+	import { quintOut } from 'svelte/easing'
+	import { crossfade } from 'svelte/transition'
+	import { flip } from 'svelte/animate'
 
 	let todos = [
 		{
@@ -14,7 +17,7 @@
 		{
 			id: 1,
 			name: "example2",
-			isComplete: false,
+			isComplete: true,
 			priority: "high",
 			createdAt: new Date(),
 			dueAt: new Date(),
@@ -48,6 +51,10 @@
 			}
 			return todo;
 		});
+		todos = todos.sort(function (a, b) {
+			return a.isComplete - b.isComplete;
+		});
+
 		task = "";
 	}
 
@@ -73,6 +80,22 @@
 		todos = todos;
 	}
 
+  // FLIP ANIMATION
+  const [send, receive] = crossfade({
+  	duration: d => Math.sqrt(d * 200),
+  	fallback(node, params) {
+  		const style = getComputedStyle(node)
+  		const transform = style.transform === 'none' ? '' : style.transform
+  		return {
+  			duration: 600,
+  			easing: quintOut,
+  			css: t => `
+  			transform: ${transform} scale(${t})
+  			opacity: ${t}
+  			`
+  		}
+  	}
+  })
 </script>
 
 <div class="p-5">
@@ -85,8 +108,10 @@
 		<br>
 		
 		<ul class="list-group">
-			{#each todos as todo}
-				<Todo {todo} {completeTodo} {removeTodo} {changePriority} {dateChaged}/>
+			{#each todos as todo (todo.id)}
+				<div in:receive="{{key: todo.id}}" out:send="{{key: todo.id}}" animate:flip>
+					<Todo {todo} {completeTodo} {removeTodo} {changePriority} {dateChaged}/>
+				</div>
 			{:else}
 			    <li class="list-group-item"> No task, add one! </li>
 			{/each}
