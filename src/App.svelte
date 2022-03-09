@@ -48,7 +48,6 @@
 			}
 			return todo;
 		});
-		
 		task = "";
 	}
 
@@ -70,6 +69,10 @@
 		todos = todos;
     }
 
+	const dateChaged = (t) =>{
+		todos = todos;
+	}
+
 </script>
 
 <div class="p-5">
@@ -83,7 +86,9 @@
 		
 		<ul class="list-group">
 			{#each todos as todo}
-				<Todo {todo} {completeTodo} {removeTodo} {changePriority} />
+				<Todo {todo} {completeTodo} {removeTodo} {changePriority} {dateChaged}/>
+			{:else}
+			    <li class="list-group-item"> No task, add one! </li>
 			{/each}
 		</ul >
 	</div>

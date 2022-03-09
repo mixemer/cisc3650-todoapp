@@ -6,25 +6,9 @@
     export let completeTodo;
     export let removeTodo;
     export let changePriority;
+    export let dateChaged;
 
-    let month, day, year;
-    let date = todo.dueAt;
-    let dateString;
-
-    onMount(()=> {
-        if (date === undefined) return;
-
-        month = '' + (date.getMonth() + 1),
-        day = '' + date.getDate(),
-        year = date.getFullYear();
-
-        if (month.length < 2) 
-            month = '0' + month;
-        if (day.length < 2) 
-            day = '0' + day;
-
-        dateString = [year, month, day].join('-');
-	})
+    const attributes1 = {min: new Date()};
 </script>
 
 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -34,7 +18,7 @@
         <DropDown {todo} {changePriority}/>
     </div>
     <div>
-        <input type="date" min={new Date()} max="2050-12-31" bind:value={dateString}>
+        <input type="date" min={attributes1.min} bind:value={todo.dueAt} on:change={dateChaged(todo)}>
         <button class="btn-close" type="button"  aria-label="Close" on:click={removeTodo(todo)}></button>
     </div>
     

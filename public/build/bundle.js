@@ -950,20 +950,19 @@ var app = (function () {
     			attr_dev(input0, "type", "checkbox");
     			input0.value = "";
     			input0.checked = input0_checked_value = /*todo*/ ctx[0].isComplete;
-    			add_location(input0, file$1, 31, 8, 833);
+    			add_location(input0, file$1, 15, 8, 460);
     			attr_dev(div0, "class", div0_class_value = "position-relative " + (/*todo*/ ctx[0].isComplete ? 'completed' : '') + " svelte-1eso3dz");
-    			add_location(div0, file$1, 30, 4, 754);
+    			add_location(div0, file$1, 14, 4, 381);
     			attr_dev(input1, "type", "date");
-    			attr_dev(input1, "min", new Date());
-    			attr_dev(input1, "max", "2050-12-31");
-    			add_location(input1, file$1, 36, 8, 1024);
+    			attr_dev(input1, "min", /*attributes1*/ ctx[5].min);
+    			add_location(input1, file$1, 20, 8, 651);
     			attr_dev(button, "class", "btn-close");
     			attr_dev(button, "type", "button");
     			attr_dev(button, "aria-label", "Close");
-    			add_location(button, file$1, 37, 8, 1111);
-    			add_location(div1, file$1, 35, 4, 1009);
+    			add_location(button, file$1, 21, 8, 755);
+    			add_location(div1, file$1, 19, 4, 636);
     			attr_dev(li, "class", "list-group-item d-flex justify-content-between align-items-center");
-    			add_location(li, file$1, 29, 0, 670);
+    			add_location(li, file$1, 13, 0, 297);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -979,7 +978,7 @@ var app = (function () {
     			append_dev(li, t3);
     			append_dev(li, div1);
     			append_dev(div1, input1);
-    			set_input_value(input1, /*dateString*/ ctx[4]);
+    			set_input_value(input1, /*todo*/ ctx[0].dueAt);
     			append_dev(div1, t4);
     			append_dev(div1, button);
     			current = true;
@@ -996,7 +995,17 @@ var app = (function () {
     						false,
     						false
     					),
-    					listen_dev(input1, "input", /*input1_input_handler*/ ctx[5]),
+    					listen_dev(input1, "input", /*input1_input_handler*/ ctx[6]),
+    					listen_dev(
+    						input1,
+    						"change",
+    						function () {
+    							if (is_function(/*dateChaged*/ ctx[4](/*todo*/ ctx[0]))) /*dateChaged*/ ctx[4](/*todo*/ ctx[0]).apply(this, arguments);
+    						},
+    						false,
+    						false,
+    						false
+    					),
     					listen_dev(
     						button,
     						"click",
@@ -1029,8 +1038,8 @@ var app = (function () {
     				attr_dev(div0, "class", div0_class_value);
     			}
 
-    			if (dirty & /*dateString*/ 16) {
-    				set_input_value(input1, /*dateString*/ ctx[4]);
+    			if (dirty & /*todo*/ 1) {
+    				set_input_value(input1, /*todo*/ ctx[0].dueAt);
     			}
     		},
     		i: function intro(local) {
@@ -1068,27 +1077,17 @@ var app = (function () {
     	let { completeTodo } = $$props;
     	let { removeTodo } = $$props;
     	let { changePriority } = $$props;
-    	let month, day, year;
-    	let date = todo.dueAt;
-    	let dateString;
-
-    	onMount(() => {
-    		if (date === undefined) return;
-    		(month = '' + (date.getMonth() + 1), day = '' + date.getDate(), year = date.getFullYear());
-    		if (month.length < 2) month = '0' + month;
-    		if (day.length < 2) day = '0' + day;
-    		$$invalidate(4, dateString = [year, month, day].join('-'));
-    	});
-
-    	const writable_props = ['todo', 'completeTodo', 'removeTodo', 'changePriority'];
+    	let { dateChaged } = $$props;
+    	const attributes1 = { min: new Date() };
+    	const writable_props = ['todo', 'completeTodo', 'removeTodo', 'changePriority', 'dateChaged'];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Todo> was created with unknown prop '${key}'`);
     	});
 
     	function input1_input_handler() {
-    		dateString = this.value;
-    		$$invalidate(4, dateString);
+    		todo.dueAt = this.value;
+    		$$invalidate(0, todo);
     	}
 
     	$$self.$$set = $$props => {
@@ -1096,6 +1095,7 @@ var app = (function () {
     		if ('completeTodo' in $$props) $$invalidate(1, completeTodo = $$props.completeTodo);
     		if ('removeTodo' in $$props) $$invalidate(2, removeTodo = $$props.removeTodo);
     		if ('changePriority' in $$props) $$invalidate(3, changePriority = $$props.changePriority);
+    		if ('dateChaged' in $$props) $$invalidate(4, dateChaged = $$props.dateChaged);
     	};
 
     	$$self.$capture_state = () => ({
@@ -1105,11 +1105,8 @@ var app = (function () {
     		completeTodo,
     		removeTodo,
     		changePriority,
-    		month,
-    		day,
-    		year,
-    		date,
-    		dateString
+    		dateChaged,
+    		attributes1
     	});
 
     	$$self.$inject_state = $$props => {
@@ -1117,11 +1114,7 @@ var app = (function () {
     		if ('completeTodo' in $$props) $$invalidate(1, completeTodo = $$props.completeTodo);
     		if ('removeTodo' in $$props) $$invalidate(2, removeTodo = $$props.removeTodo);
     		if ('changePriority' in $$props) $$invalidate(3, changePriority = $$props.changePriority);
-    		if ('month' in $$props) month = $$props.month;
-    		if ('day' in $$props) day = $$props.day;
-    		if ('year' in $$props) year = $$props.year;
-    		if ('date' in $$props) date = $$props.date;
-    		if ('dateString' in $$props) $$invalidate(4, dateString = $$props.dateString);
+    		if ('dateChaged' in $$props) $$invalidate(4, dateChaged = $$props.dateChaged);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -1133,7 +1126,8 @@ var app = (function () {
     		completeTodo,
     		removeTodo,
     		changePriority,
-    		dateString,
+    		dateChaged,
+    		attributes1,
     		input1_input_handler
     	];
     }
@@ -1146,7 +1140,8 @@ var app = (function () {
     			todo: 0,
     			completeTodo: 1,
     			removeTodo: 2,
-    			changePriority: 3
+    			changePriority: 3,
+    			dateChaged: 4
     		});
 
     		dispatch_dev("SvelteRegisterComponent", {
@@ -1173,6 +1168,10 @@ var app = (function () {
 
     		if (/*changePriority*/ ctx[3] === undefined && !('changePriority' in props)) {
     			console.warn("<Todo> was created without expected prop 'changePriority'");
+    		}
+
+    		if (/*dateChaged*/ ctx[4] === undefined && !('dateChaged' in props)) {
+    			console.warn("<Todo> was created without expected prop 'dateChaged'");
     		}
     	}
 
@@ -1207,6 +1206,14 @@ var app = (function () {
     	set changePriority(value) {
     		throw new Error("<Todo>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
+
+    	get dateChaged() {
+    		throw new Error("<Todo>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set dateChaged(value) {
+    		throw new Error("<Todo>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
     }
 
     /* src\App.svelte generated by Svelte v3.46.4 */
@@ -1214,21 +1221,52 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
+    	child_ctx[9] = list[i];
     	return child_ctx;
     }
 
-    // (85:3) {#each todos as todo}
+    // (90:3) {:else}
+    function create_else_block(ctx) {
+    	let li;
+
+    	const block = {
+    		c: function create() {
+    			li = element("li");
+    			li.textContent = "No task, add one! ";
+    			attr_dev(li, "class", "list-group-item");
+    			add_location(li, file, 90, 7, 1797);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, li, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(li);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_else_block.name,
+    		type: "else",
+    		source: "(90:3) {:else}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (88:3) {#each todos as todo}
     function create_each_block(ctx) {
     	let todo;
     	let current;
 
     	todo = new Todo({
     			props: {
-    				todo: /*todo*/ ctx[8],
+    				todo: /*todo*/ ctx[9],
     				completeTodo: /*completeTodo*/ ctx[4],
     				removeTodo: /*removeTodo*/ ctx[5],
-    				changePriority: /*changePriority*/ ctx[6]
+    				changePriority: /*changePriority*/ ctx[6],
+    				dateChaged: /*dateChaged*/ ctx[7]
     			},
     			$$inline: true
     		});
@@ -1243,7 +1281,7 @@ var app = (function () {
     		},
     		p: function update(ctx, dirty) {
     			const todo_changes = {};
-    			if (dirty & /*todos*/ 2) todo_changes.todo = /*todo*/ ctx[8];
+    			if (dirty & /*todos*/ 2) todo_changes.todo = /*todo*/ ctx[9];
     			todo.$set(todo_changes);
     		},
     		i: function intro(local) {
@@ -1264,7 +1302,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(85:3) {#each todos as todo}",
+    		source: "(88:3) {#each todos as todo}",
     		ctx
     	});
 
@@ -1300,6 +1338,12 @@ var app = (function () {
     		each_blocks[i] = null;
     	});
 
+    	let each_1_else = null;
+
+    	if (!each_value.length) {
+    		each_1_else = create_else_block(ctx);
+    	}
+
     	const block = {
     		c: function create() {
     			div1 = element("div");
@@ -1319,20 +1363,24 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
+    			if (each_1_else) {
+    				each_1_else.c();
+    			}
+
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Add a task");
-    			add_location(input, file, 78, 2, 1431);
+    			add_location(input, file, 81, 2, 1477);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-success");
     			button.disabled = /*disabled*/ ctx[2];
-    			add_location(button, file, 79, 2, 1496);
-    			add_location(br, file, 81, 2, 1597);
+    			add_location(button, file, 82, 2, 1542);
+    			add_location(br, file, 84, 2, 1643);
     			attr_dev(ul, "class", "list-group");
-    			add_location(ul, file, 83, 2, 1607);
+    			add_location(ul, file, 86, 2, 1653);
     			attr_dev(div0, "class", "px-4");
-    			add_location(div0, file, 77, 1, 1410);
+    			add_location(div0, file, 80, 1, 1456);
     			attr_dev(div1, "class", "p-5");
-    			add_location(div1, file, 74, 0, 1363);
+    			add_location(div1, file, 77, 0, 1409);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1356,11 +1404,15 @@ var app = (function () {
     				each_blocks[i].m(ul, null);
     			}
 
+    			if (each_1_else) {
+    				each_1_else.m(ul, null);
+    			}
+
     			current = true;
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(input, "input", /*input_input_handler*/ ctx[7]),
+    					listen_dev(input, "input", /*input_input_handler*/ ctx[8]),
     					listen_dev(button, "click", /*addTodo*/ ctx[3], false, false, false)
     				];
 
@@ -1376,7 +1428,7 @@ var app = (function () {
     				prop_dev(button, "disabled", /*disabled*/ ctx[2]);
     			}
 
-    			if (dirty & /*todos, completeTodo, removeTodo, changePriority*/ 114) {
+    			if (dirty & /*todos, completeTodo, removeTodo, changePriority, dateChaged*/ 242) {
     				each_value = /*todos*/ ctx[1];
     				validate_each_argument(each_value);
     				let i;
@@ -1402,6 +1454,17 @@ var app = (function () {
     				}
 
     				check_outros();
+
+    				if (each_value.length) {
+    					if (each_1_else) {
+    						each_1_else.d(1);
+    						each_1_else = null;
+    					}
+    				} else if (!each_1_else) {
+    					each_1_else = create_else_block(ctx);
+    					each_1_else.c();
+    					each_1_else.m(ul, null);
+    				}
     			}
     		},
     		i: function intro(local) {
@@ -1428,6 +1491,7 @@ var app = (function () {
     			if (detaching) detach_dev(div1);
     			destroy_component(headername);
     			destroy_each(each_blocks, detaching);
+    			if (each_1_else) each_1_else.d();
     			mounted = false;
     			run_all(dispose);
     		}
@@ -1519,6 +1583,10 @@ var app = (function () {
     		$$invalidate(1, todos);
     	};
 
+    	const dateChaged = t => {
+    		$$invalidate(1, todos);
+    	};
+
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -1540,6 +1608,7 @@ var app = (function () {
     		completeTodo,
     		removeTodo,
     		changePriority,
+    		dateChaged,
     		disabled
     	});
 
@@ -1567,6 +1636,7 @@ var app = (function () {
     		completeTodo,
     		removeTodo,
     		changePriority,
+    		dateChaged,
     		input_input_handler
     	];
     }
