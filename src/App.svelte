@@ -25,11 +25,21 @@
 	];
 	let task = "";
 	$: disabled = task.trim() === "";
+	var sounds = {
+		info: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233294/info.mp3",
+		// path to sound for successfull message:
+		success: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233524/success.mp3",
+		// path to sound for warn message:
+		warning: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233563/warning.mp3",
+		// path to sound for error message:
+		error: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233574/error.mp3",
+	};
+
 
 	function generateRandomId() {
 		return Math.random().toString(16).slice(2);
 	}
-
+	
 	const addTodo = () => {
 		let todo = {
 			id: generateRandomId(),
@@ -41,6 +51,8 @@
 		};
 
 		todos = [todo, ...todos];
+		var audio = new Audio(sounds.success);
+		audio.play();
 		task = "";
 	}
 
@@ -54,15 +66,20 @@
 		todos = todos.sort(function (a, b) {
 			return a.isComplete - b.isComplete;
 		});
-
+		var audio = new Audio(sounds.info);
+		audio.play();
 		task = "";
 	}
+
 
 	const removeTodo = (todo) => {
 		let confirmAction = confirm("Are you sure to delete task: " + todo.name + "?");
 		
 		if (confirmAction) {
 			todos = todos.filter((t)=>t.id !== todo.id);
+
+			var audio = new Audio(sounds.warning);
+			audio.play();
 		}
 	}
 

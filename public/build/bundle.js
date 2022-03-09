@@ -1753,11 +1753,11 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[11] = list[i];
+    	child_ctx[12] = list[i];
     	return child_ctx;
     }
 
-    // (115:3) {:else}
+    // (132:3) {:else}
     function create_else_block(ctx) {
     	let li;
 
@@ -1766,7 +1766,7 @@ var app = (function () {
     			li = element("li");
     			li.textContent = "No task, add one! ";
     			attr_dev(li, "class", "list-group-item");
-    			add_location(li, file, 115, 7, 2505);
+    			add_location(li, file, 132, 7, 3159);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -1780,14 +1780,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(115:3) {:else}",
+    		source: "(132:3) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (111:3) {#each todos as todo (todo.id)}
+    // (128:3) {#each todos as todo (todo.id)}
     function create_each_block(key_1, ctx) {
     	let div;
     	let todo;
@@ -1800,7 +1800,7 @@ var app = (function () {
 
     	todo = new Todo({
     			props: {
-    				todo: /*todo*/ ctx[11],
+    				todo: /*todo*/ ctx[12],
     				completeTodo: /*completeTodo*/ ctx[4],
     				removeTodo: /*removeTodo*/ ctx[5],
     				changePriority: /*changePriority*/ ctx[6],
@@ -1816,7 +1816,7 @@ var app = (function () {
     			div = element("div");
     			create_component(todo.$$.fragment);
     			t = space();
-    			add_location(div, file, 111, 4, 2321);
+    			add_location(div, file, 128, 4, 2975);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -1828,7 +1828,7 @@ var app = (function () {
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
     			const todo_changes = {};
-    			if (dirty & /*todos*/ 2) todo_changes.todo = /*todo*/ ctx[11];
+    			if (dirty & /*todos*/ 2) todo_changes.todo = /*todo*/ ctx[12];
     			todo.$set(todo_changes);
     		},
     		r: function measure() {
@@ -1849,7 +1849,7 @@ var app = (function () {
 
     			add_render_callback(() => {
     				if (div_outro) div_outro.end(1);
-    				div_intro = create_in_transition(div, /*receive*/ ctx[9], { key: /*todo*/ ctx[11].id });
+    				div_intro = create_in_transition(div, /*receive*/ ctx[9], { key: /*todo*/ ctx[12].id });
     				div_intro.start();
     			});
 
@@ -1858,7 +1858,7 @@ var app = (function () {
     		o: function outro(local) {
     			transition_out(todo.$$.fragment, local);
     			if (div_intro) div_intro.invalidate();
-    			div_outro = create_out_transition(div, /*send*/ ctx[8], { key: /*todo*/ ctx[11].id });
+    			div_outro = create_out_transition(div, /*send*/ ctx[8], { key: /*todo*/ ctx[12].id });
     			current = false;
     		},
     		d: function destroy(detaching) {
@@ -1872,7 +1872,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(111:3) {#each todos as todo (todo.id)}",
+    		source: "(128:3) {#each todos as todo (todo.id)}",
     		ctx
     	});
 
@@ -1900,7 +1900,7 @@ var app = (function () {
     	headername = new HeaderName({ props: { name: "Task" }, $$inline: true });
     	let each_value = /*todos*/ ctx[1];
     	validate_each_argument(each_value);
-    	const get_key = ctx => /*todo*/ ctx[11].id;
+    	const get_key = ctx => /*todo*/ ctx[12].id;
     	validate_each_keys(ctx, each_value, get_each_context, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
@@ -1940,18 +1940,18 @@ var app = (function () {
 
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Add a task");
-    			add_location(input, file, 104, 2, 2082);
+    			add_location(input, file, 121, 2, 2736);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-success");
     			button.disabled = /*disabled*/ ctx[2];
-    			add_location(button, file, 105, 2, 2147);
-    			add_location(br, file, 107, 2, 2248);
+    			add_location(button, file, 122, 2, 2801);
+    			add_location(br, file, 124, 2, 2902);
     			attr_dev(ul, "class", "list-group");
-    			add_location(ul, file, 109, 2, 2258);
+    			add_location(ul, file, 126, 2, 2912);
     			attr_dev(div0, "class", "px-4");
-    			add_location(div0, file, 103, 1, 2061);
+    			add_location(div0, file, 120, 1, 2715);
     			attr_dev(div1, "class", "p-5");
-    			add_location(div1, file, 100, 0, 2014);
+    			add_location(div1, file, 117, 0, 2668);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2095,6 +2095,16 @@ var app = (function () {
 
     	let task = "";
 
+    	var sounds = {
+    		info: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233294/info.mp3",
+    		// path to sound for successfull message:
+    		success: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233524/success.mp3",
+    		// path to sound for warn message:
+    		warning: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233563/warning.mp3",
+    		// path to sound for error message:
+    		error: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233574/error.mp3"
+    	};
+
     	const addTodo = () => {
     		let todo = {
     			id: generateRandomId(),
@@ -2106,6 +2116,8 @@ var app = (function () {
     		};
 
     		$$invalidate(1, todos = [todo, ...todos]);
+    		var audio = new Audio(sounds.success);
+    		audio.play();
     		$$invalidate(0, task = "");
     	};
 
@@ -2122,6 +2134,8 @@ var app = (function () {
     			return a.isComplete - b.isComplete;
     		}));
 
+    		var audio = new Audio(sounds.info);
+    		audio.play();
     		$$invalidate(0, task = "");
     	};
 
@@ -2130,6 +2144,8 @@ var app = (function () {
 
     		if (confirmAction) {
     			$$invalidate(1, todos = todos.filter(t => t.id !== todo.id));
+    			var audio = new Audio(sounds.warning);
+    			audio.play();
     		}
     	};
 
@@ -2185,6 +2201,7 @@ var app = (function () {
     		flip,
     		todos,
     		task,
+    		sounds,
     		generateRandomId,
     		addTodo,
     		completeTodo,
@@ -2199,6 +2216,7 @@ var app = (function () {
     	$$self.$inject_state = $$props => {
     		if ('todos' in $$props) $$invalidate(1, todos = $$props.todos);
     		if ('task' in $$props) $$invalidate(0, task = $$props.task);
+    		if ('sounds' in $$props) sounds = $$props.sounds;
     		if ('disabled' in $$props) $$invalidate(2, disabled = $$props.disabled);
     	};
 
