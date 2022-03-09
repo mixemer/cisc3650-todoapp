@@ -1882,7 +1882,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (166:3) {:else}
+    // (167:3) {:else}
     function create_else_block(ctx) {
     	let li;
 
@@ -1891,7 +1891,7 @@ var app = (function () {
     			li = element("li");
     			li.textContent = "No task, add one! ";
     			attr_dev(li, "class", "list-group-item");
-    			add_location(li, file, 166, 7, 4172);
+    			add_location(li, file, 167, 7, 4206);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -1905,14 +1905,14 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(166:3) {:else}",
+    		source: "(167:3) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (162:5) {#if !todo.isComplete || !hide}
+    // (163:5) {#if !todo.isComplete || !hide}
     function create_if_block(ctx) {
     	let todo;
     	let current;
@@ -1959,14 +1959,14 @@ var app = (function () {
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(162:5) {#if !todo.isComplete || !hide}",
+    		source: "(163:5) {#if !todo.isComplete || !hide}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (160:3) {#each todos as todo (todo.id)}
+    // (161:3) {#each todos as todo (todo.id)}
     function create_each_block(key_1, ctx) {
     	let div;
     	let t;
@@ -1984,7 +1984,7 @@ var app = (function () {
     			div = element("div");
     			if (if_block) if_block.c();
     			t = space();
-    			add_location(div, file, 160, 4, 3938);
+    			add_location(div, file, 161, 4, 3972);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -2060,7 +2060,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(160:3) {#each todos as todo (todo.id)}",
+    		source: "(161:3) {#each todos as todo (todo.id)}",
     		ctx
     	});
 
@@ -2091,20 +2091,25 @@ var app = (function () {
     	let button2_disabled_value;
     	let t8;
     	let div3;
-    	let h50;
+    	let h60;
     	let t9;
     	let t10_value = /*todos*/ ctx[0].length + "";
     	let t10;
     	let t11;
-    	let h51;
+    	let h61;
     	let t12;
     	let t13;
     	let t14;
-    	let br;
+    	let br0;
     	let t15;
     	let ul;
     	let each_blocks = [];
     	let each_1_lookup = new Map();
+    	let t16;
+    	let br1;
+    	let t17;
+    	let h3;
+    	let h3_transition;
     	let current;
     	let mounted;
     	let dispose;
@@ -2148,15 +2153,15 @@ var app = (function () {
     			t7 = text("Delete Completed");
     			t8 = space();
     			div3 = element("div");
-    			h50 = element("h5");
+    			h60 = element("h6");
     			t9 = text("Total Tasks: ");
     			t10 = text(t10_value);
     			t11 = space();
-    			h51 = element("h5");
+    			h61 = element("h6");
     			t12 = text("Completed Tasks: ");
     			t13 = text(/*completedCount*/ ctx[3]);
     			t14 = space();
-    			br = element("br");
+    			br0 = element("br");
     			t15 = space();
     			ul = element("ul");
 
@@ -2168,36 +2173,42 @@ var app = (function () {
     				each_1_else.c();
     			}
 
+    			t16 = space();
+    			br1 = element("br");
+    			t17 = space();
+    			h3 = element("h3");
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Add a task");
-    			add_location(input, file, 143, 4, 3220);
+    			add_location(input, file, 144, 4, 3254);
     			attr_dev(button0, "type", "button");
     			attr_dev(button0, "class", "btn btn-success");
     			button0.disabled = /*disabled*/ ctx[4];
-    			add_location(button0, file, 144, 4, 3287);
-    			add_location(div0, file, 142, 3, 3210);
+    			add_location(button0, file, 145, 4, 3321);
+    			add_location(div0, file, 143, 3, 3244);
     			attr_dev(button1, "type", "button");
     			attr_dev(button1, "class", "btn btn-warning btn-sm ");
     			button1.disabled = button1_disabled_value = /*completedCount*/ ctx[3] < 1;
-    			add_location(button1, file, 148, 4, 3413);
+    			add_location(button1, file, 149, 4, 3447);
     			attr_dev(button2, "type", "button");
     			attr_dev(button2, "class", "btn btn-danger btn-sm");
     			button2.disabled = button2_disabled_value = /*completedCount*/ ctx[3] < 1;
-    			add_location(button2, file, 149, 4, 3567);
-    			add_location(div1, file, 146, 3, 3398);
+    			add_location(button2, file, 150, 4, 3601);
+    			add_location(div1, file, 147, 3, 3432);
     			attr_dev(div2, "class", "d-flex justify-content-between");
-    			add_location(div2, file, 141, 2, 3162);
-    			add_location(h50, file, 153, 3, 3771);
-    			add_location(h51, file, 154, 3, 3811);
+    			add_location(div2, file, 142, 2, 3196);
+    			add_location(h60, file, 154, 3, 3805);
+    			add_location(h61, file, 155, 3, 3845);
     			attr_dev(div3, "class", "d-flex justify-content-between");
-    			add_location(div3, file, 152, 2, 3723);
-    			add_location(br, file, 156, 2, 3865);
+    			add_location(div3, file, 153, 2, 3757);
+    			add_location(br0, file, 157, 2, 3899);
     			attr_dev(ul, "class", "list-group");
-    			add_location(ul, file, 158, 2, 3875);
-    			attr_dev(div4, "class", "px-4");
-    			add_location(div4, file, 139, 1, 3138);
-    			attr_dev(div5, "class", "p-5");
-    			add_location(div5, file, 136, 0, 3091);
+    			add_location(ul, file, 159, 2, 3909);
+    			add_location(div4, file, 140, 1, 3185);
+    			add_location(br1, file, 173, 1, 4292);
+    			attr_dev(h3, "class", "py-1 px-3 mb-3 border-bottom border-dark border-3 svelte-5ikhri");
+    			add_location(h3, file, 174, 1, 4299);
+    			attr_dev(div5, "class", "content svelte-5ikhri");
+    			add_location(div5, file, 137, 0, 3134);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2224,15 +2235,15 @@ var app = (function () {
     			append_dev(button2, t7);
     			append_dev(div4, t8);
     			append_dev(div4, div3);
-    			append_dev(div3, h50);
-    			append_dev(h50, t9);
-    			append_dev(h50, t10);
+    			append_dev(div3, h60);
+    			append_dev(h60, t9);
+    			append_dev(h60, t10);
     			append_dev(div3, t11);
-    			append_dev(div3, h51);
-    			append_dev(h51, t12);
-    			append_dev(h51, t13);
+    			append_dev(div3, h61);
+    			append_dev(h61, t12);
+    			append_dev(h61, t13);
     			append_dev(div4, t14);
-    			append_dev(div4, br);
+    			append_dev(div4, br0);
     			append_dev(div4, t15);
     			append_dev(div4, ul);
 
@@ -2244,6 +2255,10 @@ var app = (function () {
     				each_1_else.m(ul, null);
     			}
 
+    			append_dev(div5, t16);
+    			append_dev(div5, br1);
+    			append_dev(div5, t17);
+    			append_dev(div5, h3);
     			current = true;
 
     			if (!mounted) {
@@ -2309,6 +2324,11 @@ var app = (function () {
     				transition_in(each_blocks[i]);
     			}
 
+    			add_render_callback(() => {
+    				if (!h3_transition) h3_transition = create_bidirectional_transition(h3, fade, {}, true);
+    				h3_transition.run(1);
+    			});
+
     			current = true;
     		},
     		o: function outro(local) {
@@ -2318,6 +2338,8 @@ var app = (function () {
     				transition_out(each_blocks[i]);
     			}
 
+    			if (!h3_transition) h3_transition = create_bidirectional_transition(h3, fade, {}, false);
+    			h3_transition.run(0);
     			current = false;
     		},
     		d: function destroy(detaching) {
@@ -2329,6 +2351,7 @@ var app = (function () {
     			}
 
     			if (each_1_else) each_1_else.d();
+    			if (detaching && h3_transition) h3_transition.end();
     			mounted = false;
     			run_all(dispose);
     		}
@@ -2497,6 +2520,7 @@ var app = (function () {
     		quintOut,
     		crossfade,
     		flip,
+    		fade,
     		todos,
     		task,
     		sounds,

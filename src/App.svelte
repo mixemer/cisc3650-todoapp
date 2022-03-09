@@ -4,6 +4,7 @@
 	import { quintOut } from 'svelte/easing'
 	import { crossfade } from 'svelte/transition'
 	import { flip } from 'svelte/animate'
+	import { fade } from 'svelte/transition';
 
 	let todos = [
 		{
@@ -134,10 +135,10 @@
   }
 </script>
 
-<div class="p-5">
+<div class="content">
 	<HeaderName name="Task"/>
 
-	<div class="px-4">
+	<div>
 		
 		<div class="d-flex justify-content-between">
 			<div>
@@ -151,8 +152,8 @@
 			</div>
 		</div>
 		<div class="d-flex justify-content-between">
-			<h5>Total Tasks: {todos.length}</h5>
-			<h5>Completed Tasks: {completedCount}</h5>
+			<h6>Total Tasks: {todos.length}</h6>
+			<h6>Completed Tasks: {completedCount}</h6>
 		</div>
 		<br>
 		
@@ -170,4 +171,18 @@
 
 		
 	</div>
+	<br/>
+	<h3 transition:fade  class="py-1 px-3 mb-3 border-bottom border-dark border-3"> </h3>
 </div>
+
+<style>
+	h3 {
+		height: 50px;
+        background-color: #d6d8d8;
+    } 
+@media screen and (min-width: 700px) {
+    .content	 {
+        padding: 4vw 10vw; /* Corresponds to 10% of the viewport width */
+    }
+}
+</style>
