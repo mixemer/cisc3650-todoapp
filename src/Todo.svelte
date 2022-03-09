@@ -1,5 +1,6 @@
 <script>
     import DropDown from './DropDown.svelte';
+	import { fade } from 'svelte/transition';
 
     export let todo;
     export let completeTodo;
@@ -13,7 +14,7 @@
     $: dateString = new Date(now.getTime() - (now.getTimezoneOffset() * 60000 )).toISOString().split("T")[0];
 </script>
 
-<li class="list-group-item d-flex justify-content-between align-items-center">
+<li transition:fade class="list-group-item d-flex justify-content-between align-items-center">
     <div class="position-relative {todo.isComplete ? 'completed' : ''}" >
         <input type="checkbox" value="" on:change={completeTodo(todo.id)} checked={isComplete}>
         {todo.name}

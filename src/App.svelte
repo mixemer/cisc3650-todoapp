@@ -34,7 +34,7 @@
 		// path to sound for error message:
 		error: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233574/error.mp3",
 	};
-
+	let hide = false;
 
 	function generateRandomId() {
 		return Math.random().toString(16).slice(2);
@@ -47,7 +47,7 @@
 			isComplete: false,
 			priority: "low",
 			createdAt: new Date(),
-			dueAt: undefined
+			dueAt: undefined,
 		};
 
 		todos = [todo, ...todos];
@@ -60,17 +60,19 @@
 		todos = todos.map((todo) => {
 			if (todo.id === id) {
 				todo.isComplete = !todo.isComplete;
+				todo.hide = hide;
 			}
 			return todo;
 		});
+
 		todos = todos.sort(function (a, b) {
 			return a.isComplete - b.isComplete;
 		});
+
 		var audio = new Audio(sounds.info);
 		audio.play();
 		task = "";
 	}
-
 
 	const removeTodo = (todo) => {
 		let confirmAction = confirm("Are you sure to delete task: " + todo.name + "?");
@@ -113,25 +115,59 @@
   		}
   	}
   })
+
+  
+  let hideOrShow  = () => {
+	hide = !hide;
+  }
+
+  $: completedCount = todos.filter(todo => todo.isComplete === true).length;
+  let deleteCompleted = () => {
+	let confirmAction = confirm("Are you sure to delete all completed tasks?");
+		
+	if (confirmAction) {
+		todos = todos.filter((t)=>t.isComplete === false);
+
+		var audio = new Audio(sounds.warning);
+		audio.play();
+	}
+  }
 </script>
 
 <div class="p-5">
 	<HeaderName name="Task"/>
 
 	<div class="px-4">
-		<input type="text" placeholder="Add a task" bind:value={task}>
-		<button type="button" class="btn btn-success" on:click={addTodo} disabled={disabled}>Add</button>
-
+		
+		<div class="d-flex justify-content-between">
+			<div>
+				<input type="text" placeholder="Add a task" bind:value={task}>
+				<button type="button" class="btn btn-success" on:click={addTodo} disabled={disabled}>Add</button>
+			</div>
+			<div>
+				
+				<button type="button" class="btn btn-warning btn-sm " on:click={hideOrShow} disabled={completedCount < 1}>{hide ? 'Show' : 'Hide'} Completed</button>
+				<button type="button" class="btn btn-danger btn-sm" on:click={deleteCompleted} disabled={completedCount < 1}>Delete Completed</button>
+			</div>
+		</div>
+		<div class="d-flex justify-content-between">
+			<h5>Total Tasks: {todos.length}</h5>
+			<h5>Completed Tasks: {completedCount}</h5>
+		</div>
 		<br>
 		
 		<ul class="list-group">
 			{#each todos as todo (todo.id)}
-				<div in:receive="{{key: todo.id}}" out:send="{{key: todo.id}}" animate:flip>
-					<Todo {todo} {completeTodo} {removeTodo} {changePriority} {dateChaged}/>
+				<div in:receive="{{key: todo.id}}" out:send="{{key: todo.id}}" animate:flip >
+					{#if !todo.isComplete || !hide}
+						<Todo {todo} {completeTodo} {removeTodo} {changePriority} {dateChaged}/>
+					{/if}
 				</div>
 			{:else}
 			    <li class="list-group-item"> No task, add one! </li>
 			{/each}
 		</ul >
+
+		
 	</div>
 </div>

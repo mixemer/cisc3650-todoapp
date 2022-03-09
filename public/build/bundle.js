@@ -518,6 +518,111 @@ var app = (function () {
             }
         };
     }
+    function create_bidirectional_transition(node, fn, params, intro) {
+        let config = fn(node, params);
+        let t = intro ? 0 : 1;
+        let running_program = null;
+        let pending_program = null;
+        let animation_name = null;
+        function clear_animation() {
+            if (animation_name)
+                delete_rule(node, animation_name);
+        }
+        function init(program, duration) {
+            const d = (program.b - t);
+            duration *= Math.abs(d);
+            return {
+                a: t,
+                b: program.b,
+                d,
+                duration,
+                start: program.start,
+                end: program.start + duration,
+                group: program.group
+            };
+        }
+        function go(b) {
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
+            const program = {
+                start: now() + delay,
+                b
+            };
+            if (!b) {
+                // @ts-ignore todo: improve typings
+                program.group = outros;
+                outros.r += 1;
+            }
+            if (running_program || pending_program) {
+                pending_program = program;
+            }
+            else {
+                // if this is an intro, and there's a delay, we need to do
+                // an initial tick and/or apply CSS animation immediately
+                if (css) {
+                    clear_animation();
+                    animation_name = create_rule(node, t, b, duration, delay, easing, css);
+                }
+                if (b)
+                    tick(0, 1);
+                running_program = init(program, duration);
+                add_render_callback(() => dispatch(node, b, 'start'));
+                loop(now => {
+                    if (pending_program && now > pending_program.start) {
+                        running_program = init(pending_program, duration);
+                        pending_program = null;
+                        dispatch(node, running_program.b, 'start');
+                        if (css) {
+                            clear_animation();
+                            animation_name = create_rule(node, t, running_program.b, running_program.duration, 0, easing, config.css);
+                        }
+                    }
+                    if (running_program) {
+                        if (now >= running_program.end) {
+                            tick(t = running_program.b, 1 - t);
+                            dispatch(node, running_program.b, 'end');
+                            if (!pending_program) {
+                                // we're done
+                                if (running_program.b) {
+                                    // intro — we can tidy up immediately
+                                    clear_animation();
+                                }
+                                else {
+                                    // outro — needs to be coordinated
+                                    if (!--running_program.group.r)
+                                        run_all(running_program.group.c);
+                                }
+                            }
+                            running_program = null;
+                        }
+                        else if (now >= running_program.start) {
+                            const p = now - running_program.start;
+                            t = running_program.a + running_program.d * easing(p / running_program.duration);
+                            tick(t, 1 - t);
+                        }
+                    }
+                    return !!(running_program || pending_program);
+                });
+            }
+        }
+        return {
+            run(b) {
+                if (is_function(config)) {
+                    wait().then(() => {
+                        // @ts-ignore
+                        config = config();
+                        go(b);
+                    });
+                }
+                else {
+                    go(b);
+                }
+            },
+            end() {
+                clear_animation();
+                running_program = pending_program = null;
+            }
+        };
+    }
     function outro_and_destroy_block(block, lookup) {
         transition_out(block, 1, 1, () => {
             lookup.delete(block.key);
@@ -1039,7 +1144,7 @@ var app = (function () {
     }
 
     // (16:4) {#if todo.priority !== "high"}
-    function create_if_block(ctx) {
+    function create_if_block$1(ctx) {
     	let li;
     	let button;
     	let mounted;
@@ -1085,7 +1190,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block.name,
+    		id: create_if_block$1.name,
     		type: "if",
     		source: "(16:4) {#if todo.priority !== \\\"high\\\"}",
     		ctx
@@ -1112,7 +1217,7 @@ var app = (function () {
     	let t3;
     	let if_block0 = /*todo*/ ctx[0].priority !== "low" && create_if_block_2(ctx);
     	let if_block1 = /*todo*/ ctx[0].priority !== "mid" && create_if_block_1(ctx);
-    	let if_block2 = /*todo*/ ctx[0].priority !== "high" && create_if_block(ctx);
+    	let if_block2 = /*todo*/ ctx[0].priority !== "high" && create_if_block$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -1207,7 +1312,7 @@ var app = (function () {
     				if (if_block2) {
     					if_block2.p(ctx, dirty);
     				} else {
-    					if_block2 = create_if_block(ctx);
+    					if_block2 = create_if_block$1(ctx);
     					if_block2.c();
     					if_block2.m(ul, null);
     				}
@@ -1310,6 +1415,100 @@ var app = (function () {
     	}
     }
 
+    function cubicOut(t) {
+        const f = t - 1.0;
+        return f * f * f + 1.0;
+    }
+    function quintOut(t) {
+        return --t * t * t * t * t + 1;
+    }
+
+    /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+
+    function __rest(s, e) {
+        var t = {};
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+            t[p] = s[p];
+        if (s != null && typeof Object.getOwnPropertySymbols === "function")
+            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                    t[p[i]] = s[p[i]];
+            }
+        return t;
+    }
+    function fade(node, { delay = 0, duration = 400, easing = identity } = {}) {
+        const o = +getComputedStyle(node).opacity;
+        return {
+            delay,
+            duration,
+            easing,
+            css: t => `opacity: ${t * o}`
+        };
+    }
+    function crossfade(_a) {
+        var { fallback } = _a, defaults = __rest(_a, ["fallback"]);
+        const to_receive = new Map();
+        const to_send = new Map();
+        function crossfade(from, node, params) {
+            const { delay = 0, duration = d => Math.sqrt(d) * 30, easing = cubicOut } = assign(assign({}, defaults), params);
+            const to = node.getBoundingClientRect();
+            const dx = from.left - to.left;
+            const dy = from.top - to.top;
+            const dw = from.width / to.width;
+            const dh = from.height / to.height;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            const style = getComputedStyle(node);
+            const transform = style.transform === 'none' ? '' : style.transform;
+            const opacity = +style.opacity;
+            return {
+                delay,
+                duration: is_function(duration) ? duration(d) : duration,
+                easing,
+                css: (t, u) => `
+				opacity: ${t * opacity};
+				transform-origin: top left;
+				transform: ${transform} translate(${u * dx}px,${u * dy}px) scale(${t + (1 - t) * dw}, ${t + (1 - t) * dh});
+			`
+            };
+        }
+        function transition(items, counterparts, intro) {
+            return (node, params) => {
+                items.set(params.key, {
+                    rect: node.getBoundingClientRect()
+                });
+                return () => {
+                    if (counterparts.has(params.key)) {
+                        const { rect } = counterparts.get(params.key);
+                        counterparts.delete(params.key);
+                        return crossfade(rect, node, params);
+                    }
+                    // if the node is disappearing altogether
+                    // (i.e. wasn't claimed by the other list)
+                    // then we need to supply an outro
+                    items.delete(params.key);
+                    return fallback && fallback(node, params, intro);
+                };
+            };
+        }
+        return [
+            transition(to_send, to_receive, false),
+            transition(to_receive, to_send, true)
+        ];
+    }
+
     /* src\Todo.svelte generated by Svelte v3.46.4 */
     const file$1 = "src\\Todo.svelte";
 
@@ -1328,6 +1527,7 @@ var app = (function () {
     	let input1;
     	let t4;
     	let button;
+    	let li_transition;
     	let current;
     	let mounted;
     	let dispose;
@@ -1357,19 +1557,19 @@ var app = (function () {
     			attr_dev(input0, "type", "checkbox");
     			input0.value = "";
     			input0.checked = /*isComplete*/ ctx[6];
-    			add_location(input0, file$1, 17, 8, 552);
+    			add_location(input0, file$1, 18, 8, 612);
     			attr_dev(div0, "class", div0_class_value = "position-relative " + (/*todo*/ ctx[0].isComplete ? 'completed' : '') + " svelte-1eso3dz");
-    			add_location(div0, file$1, 16, 4, 473);
+    			add_location(div0, file$1, 17, 4, 533);
     			attr_dev(input1, "type", "date");
     			attr_dev(input1, "min", /*dateString*/ ctx[5]);
-    			add_location(input1, file$1, 22, 8, 738);
+    			add_location(input1, file$1, 23, 8, 798);
     			attr_dev(button, "class", "btn-close");
     			attr_dev(button, "type", "button");
     			attr_dev(button, "aria-label", "Close");
-    			add_location(button, file$1, 23, 8, 837);
-    			add_location(div1, file$1, 21, 4, 723);
+    			add_location(button, file$1, 24, 8, 897);
+    			add_location(div1, file$1, 22, 4, 783);
     			attr_dev(li, "class", "list-group-item d-flex justify-content-between align-items-center");
-    			add_location(li, file$1, 15, 0, 389);
+    			add_location(li, file$1, 16, 0, 433);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1456,15 +1656,24 @@ var app = (function () {
     		i: function intro(local) {
     			if (current) return;
     			transition_in(dropdown.$$.fragment, local);
+
+    			add_render_callback(() => {
+    				if (!li_transition) li_transition = create_bidirectional_transition(li, fade, {}, true);
+    				li_transition.run(1);
+    			});
+
     			current = true;
     		},
     		o: function outro(local) {
     			transition_out(dropdown.$$.fragment, local);
+    			if (!li_transition) li_transition = create_bidirectional_transition(li, fade, {}, false);
+    			li_transition.run(0);
     			current = false;
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(li);
     			destroy_component(dropdown);
+    			if (detaching && li_transition) li_transition.end();
     			mounted = false;
     			run_all(dispose);
     		}
@@ -1513,6 +1722,7 @@ var app = (function () {
 
     	$$self.$capture_state = () => ({
     		DropDown,
+    		fade,
     		todo,
     		completeTodo,
     		removeTodo,
@@ -1642,91 +1852,6 @@ var app = (function () {
     	}
     }
 
-    function cubicOut(t) {
-        const f = t - 1.0;
-        return f * f * f + 1.0;
-    }
-    function quintOut(t) {
-        return --t * t * t * t * t + 1;
-    }
-
-    /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-
-    function __rest(s, e) {
-        var t = {};
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-            t[p] = s[p];
-        if (s != null && typeof Object.getOwnPropertySymbols === "function")
-            for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-                if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                    t[p[i]] = s[p[i]];
-            }
-        return t;
-    }
-    function crossfade(_a) {
-        var { fallback } = _a, defaults = __rest(_a, ["fallback"]);
-        const to_receive = new Map();
-        const to_send = new Map();
-        function crossfade(from, node, params) {
-            const { delay = 0, duration = d => Math.sqrt(d) * 30, easing = cubicOut } = assign(assign({}, defaults), params);
-            const to = node.getBoundingClientRect();
-            const dx = from.left - to.left;
-            const dy = from.top - to.top;
-            const dw = from.width / to.width;
-            const dh = from.height / to.height;
-            const d = Math.sqrt(dx * dx + dy * dy);
-            const style = getComputedStyle(node);
-            const transform = style.transform === 'none' ? '' : style.transform;
-            const opacity = +style.opacity;
-            return {
-                delay,
-                duration: is_function(duration) ? duration(d) : duration,
-                easing,
-                css: (t, u) => `
-				opacity: ${t * opacity};
-				transform-origin: top left;
-				transform: ${transform} translate(${u * dx}px,${u * dy}px) scale(${t + (1 - t) * dw}, ${t + (1 - t) * dh});
-			`
-            };
-        }
-        function transition(items, counterparts, intro) {
-            return (node, params) => {
-                items.set(params.key, {
-                    rect: node.getBoundingClientRect()
-                });
-                return () => {
-                    if (counterparts.has(params.key)) {
-                        const { rect } = counterparts.get(params.key);
-                        counterparts.delete(params.key);
-                        return crossfade(rect, node, params);
-                    }
-                    // if the node is disappearing altogether
-                    // (i.e. wasn't claimed by the other list)
-                    // then we need to supply an outro
-                    items.delete(params.key);
-                    return fallback && fallback(node, params, intro);
-                };
-            };
-        }
-        return [
-            transition(to_send, to_receive, false),
-            transition(to_receive, to_send, true)
-        ];
-    }
-
     function flip(node, { from, to }, params = {}) {
         const style = getComputedStyle(node);
         const transform = style.transform === 'none' ? '' : style.transform;
@@ -1753,11 +1878,11 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[12] = list[i];
+    	child_ctx[16] = list[i];
     	return child_ctx;
     }
 
-    // (132:3) {:else}
+    // (166:3) {:else}
     function create_else_block(ctx) {
     	let li;
 
@@ -1766,7 +1891,7 @@ var app = (function () {
     			li = element("li");
     			li.textContent = "No task, add one! ";
     			attr_dev(li, "class", "list-group-item");
-    			add_location(li, file, 132, 7, 3159);
+    			add_location(li, file, 166, 7, 4172);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -1780,56 +1905,119 @@ var app = (function () {
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(132:3) {:else}",
+    		source: "(166:3) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (128:3) {#each todos as todo (todo.id)}
+    // (162:5) {#if !todo.isComplete || !hide}
+    function create_if_block(ctx) {
+    	let todo;
+    	let current;
+
+    	todo = new Todo({
+    			props: {
+    				todo: /*todo*/ ctx[16],
+    				completeTodo: /*completeTodo*/ ctx[6],
+    				removeTodo: /*removeTodo*/ ctx[7],
+    				changePriority: /*changePriority*/ ctx[8],
+    				dateChaged: /*dateChaged*/ ctx[9]
+    			},
+    			$$inline: true
+    		});
+
+    	const block = {
+    		c: function create() {
+    			create_component(todo.$$.fragment);
+    		},
+    		m: function mount(target, anchor) {
+    			mount_component(todo, target, anchor);
+    			current = true;
+    		},
+    		p: function update(ctx, dirty) {
+    			const todo_changes = {};
+    			if (dirty & /*todos*/ 1) todo_changes.todo = /*todo*/ ctx[16];
+    			todo.$set(todo_changes);
+    		},
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(todo.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(todo.$$.fragment, local);
+    			current = false;
+    		},
+    		d: function destroy(detaching) {
+    			destroy_component(todo, detaching);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block.name,
+    		type: "if",
+    		source: "(162:5) {#if !todo.isComplete || !hide}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (160:3) {#each todos as todo (todo.id)}
     function create_each_block(key_1, ctx) {
     	let div;
-    	let todo;
     	let t;
     	let div_intro;
     	let div_outro;
     	let rect;
     	let stop_animation = noop;
     	let current;
-
-    	todo = new Todo({
-    			props: {
-    				todo: /*todo*/ ctx[12],
-    				completeTodo: /*completeTodo*/ ctx[4],
-    				removeTodo: /*removeTodo*/ ctx[5],
-    				changePriority: /*changePriority*/ ctx[6],
-    				dateChaged: /*dateChaged*/ ctx[7]
-    			},
-    			$$inline: true
-    		});
+    	let if_block = (!/*todo*/ ctx[16].isComplete || !/*hide*/ ctx[2]) && create_if_block(ctx);
 
     	const block = {
     		key: key_1,
     		first: null,
     		c: function create() {
     			div = element("div");
-    			create_component(todo.$$.fragment);
+    			if (if_block) if_block.c();
     			t = space();
-    			add_location(div, file, 128, 4, 2975);
+    			add_location(div, file, 160, 4, 3938);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-    			mount_component(todo, div, null);
+    			if (if_block) if_block.m(div, null);
     			append_dev(div, t);
     			current = true;
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			const todo_changes = {};
-    			if (dirty & /*todos*/ 2) todo_changes.todo = /*todo*/ ctx[12];
-    			todo.$set(todo_changes);
+
+    			if (!/*todo*/ ctx[16].isComplete || !/*hide*/ ctx[2]) {
+    				if (if_block) {
+    					if_block.p(ctx, dirty);
+
+    					if (dirty & /*todos, hide*/ 5) {
+    						transition_in(if_block, 1);
+    					}
+    				} else {
+    					if_block = create_if_block(ctx);
+    					if_block.c();
+    					transition_in(if_block, 1);
+    					if_block.m(div, t);
+    				}
+    			} else if (if_block) {
+    				group_outros();
+
+    				transition_out(if_block, 1, 1, () => {
+    					if_block = null;
+    				});
+
+    				check_outros();
+    			}
     		},
     		r: function measure() {
     			rect = div.getBoundingClientRect();
@@ -1845,25 +2033,25 @@ var app = (function () {
     		},
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(todo.$$.fragment, local);
+    			transition_in(if_block);
 
     			add_render_callback(() => {
     				if (div_outro) div_outro.end(1);
-    				div_intro = create_in_transition(div, /*receive*/ ctx[9], { key: /*todo*/ ctx[12].id });
+    				div_intro = create_in_transition(div, /*receive*/ ctx[11], { key: /*todo*/ ctx[16].id });
     				div_intro.start();
     			});
 
     			current = true;
     		},
     		o: function outro(local) {
-    			transition_out(todo.$$.fragment, local);
+    			transition_out(if_block);
     			if (div_intro) div_intro.invalidate();
-    			div_outro = create_out_transition(div, /*send*/ ctx[8], { key: /*todo*/ ctx[12].id });
+    			div_outro = create_out_transition(div, /*send*/ ctx[10], { key: /*todo*/ ctx[16].id });
     			current = false;
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
-    			destroy_component(todo);
+    			if (if_block) if_block.d();
     			if (detaching && div_outro) div_outro.end();
     		}
     	};
@@ -1872,7 +2060,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(128:3) {#each todos as todo (todo.id)}",
+    		source: "(160:3) {#each todos as todo (todo.id)}",
     		ctx
     	});
 
@@ -1880,17 +2068,40 @@ var app = (function () {
     }
 
     function create_fragment(ctx) {
-    	let div1;
+    	let div5;
     	let headername;
     	let t0;
+    	let div4;
+    	let div2;
     	let div0;
     	let input;
     	let t1;
-    	let button;
+    	let button0;
     	let t2;
     	let t3;
-    	let br;
+    	let div1;
+    	let button1;
+    	let t4_value = (/*hide*/ ctx[2] ? 'Show' : 'Hide') + "";
     	let t4;
+    	let t5;
+    	let button1_disabled_value;
+    	let t6;
+    	let button2;
+    	let t7;
+    	let button2_disabled_value;
+    	let t8;
+    	let div3;
+    	let h50;
+    	let t9;
+    	let t10_value = /*todos*/ ctx[0].length + "";
+    	let t10;
+    	let t11;
+    	let h51;
+    	let t12;
+    	let t13;
+    	let t14;
+    	let br;
+    	let t15;
     	let ul;
     	let each_blocks = [];
     	let each_1_lookup = new Map();
@@ -1898,9 +2109,9 @@ var app = (function () {
     	let mounted;
     	let dispose;
     	headername = new HeaderName({ props: { name: "Task" }, $$inline: true });
-    	let each_value = /*todos*/ ctx[1];
+    	let each_value = /*todos*/ ctx[0];
     	validate_each_argument(each_value);
-    	const get_key = ctx => /*todo*/ ctx[12].id;
+    	const get_key = ctx => /*todo*/ ctx[16].id;
     	validate_each_keys(ctx, each_value, get_each_context, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
@@ -1917,17 +2128,36 @@ var app = (function () {
 
     	const block = {
     		c: function create() {
-    			div1 = element("div");
+    			div5 = element("div");
     			create_component(headername.$$.fragment);
     			t0 = space();
+    			div4 = element("div");
+    			div2 = element("div");
     			div0 = element("div");
     			input = element("input");
     			t1 = space();
-    			button = element("button");
+    			button0 = element("button");
     			t2 = text("Add");
     			t3 = space();
+    			div1 = element("div");
+    			button1 = element("button");
+    			t4 = text(t4_value);
+    			t5 = text(" Completed");
+    			t6 = space();
+    			button2 = element("button");
+    			t7 = text("Delete Completed");
+    			t8 = space();
+    			div3 = element("div");
+    			h50 = element("h5");
+    			t9 = text("Total Tasks: ");
+    			t10 = text(t10_value);
+    			t11 = space();
+    			h51 = element("h5");
+    			t12 = text("Completed Tasks: ");
+    			t13 = text(/*completedCount*/ ctx[3]);
+    			t14 = space();
     			br = element("br");
-    			t4 = space();
+    			t15 = space();
     			ul = element("ul");
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
@@ -1940,36 +2170,71 @@ var app = (function () {
 
     			attr_dev(input, "type", "text");
     			attr_dev(input, "placeholder", "Add a task");
-    			add_location(input, file, 121, 2, 2736);
-    			attr_dev(button, "type", "button");
-    			attr_dev(button, "class", "btn btn-success");
-    			button.disabled = /*disabled*/ ctx[2];
-    			add_location(button, file, 122, 2, 2801);
-    			add_location(br, file, 124, 2, 2902);
+    			add_location(input, file, 143, 4, 3220);
+    			attr_dev(button0, "type", "button");
+    			attr_dev(button0, "class", "btn btn-success");
+    			button0.disabled = /*disabled*/ ctx[4];
+    			add_location(button0, file, 144, 4, 3287);
+    			add_location(div0, file, 142, 3, 3210);
+    			attr_dev(button1, "type", "button");
+    			attr_dev(button1, "class", "btn btn-warning btn-sm ");
+    			button1.disabled = button1_disabled_value = /*completedCount*/ ctx[3] < 1;
+    			add_location(button1, file, 148, 4, 3413);
+    			attr_dev(button2, "type", "button");
+    			attr_dev(button2, "class", "btn btn-danger btn-sm");
+    			button2.disabled = button2_disabled_value = /*completedCount*/ ctx[3] < 1;
+    			add_location(button2, file, 149, 4, 3567);
+    			add_location(div1, file, 146, 3, 3398);
+    			attr_dev(div2, "class", "d-flex justify-content-between");
+    			add_location(div2, file, 141, 2, 3162);
+    			add_location(h50, file, 153, 3, 3771);
+    			add_location(h51, file, 154, 3, 3811);
+    			attr_dev(div3, "class", "d-flex justify-content-between");
+    			add_location(div3, file, 152, 2, 3723);
+    			add_location(br, file, 156, 2, 3865);
     			attr_dev(ul, "class", "list-group");
-    			add_location(ul, file, 126, 2, 2912);
-    			attr_dev(div0, "class", "px-4");
-    			add_location(div0, file, 120, 1, 2715);
-    			attr_dev(div1, "class", "p-5");
-    			add_location(div1, file, 117, 0, 2668);
+    			add_location(ul, file, 158, 2, 3875);
+    			attr_dev(div4, "class", "px-4");
+    			add_location(div4, file, 139, 1, 3138);
+    			attr_dev(div5, "class", "p-5");
+    			add_location(div5, file, 136, 0, 3091);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div1, anchor);
-    			mount_component(headername, div1, null);
-    			append_dev(div1, t0);
-    			append_dev(div1, div0);
+    			insert_dev(target, div5, anchor);
+    			mount_component(headername, div5, null);
+    			append_dev(div5, t0);
+    			append_dev(div5, div4);
+    			append_dev(div4, div2);
+    			append_dev(div2, div0);
     			append_dev(div0, input);
-    			set_input_value(input, /*task*/ ctx[0]);
+    			set_input_value(input, /*task*/ ctx[1]);
     			append_dev(div0, t1);
-    			append_dev(div0, button);
-    			append_dev(button, t2);
-    			append_dev(div0, t3);
-    			append_dev(div0, br);
-    			append_dev(div0, t4);
-    			append_dev(div0, ul);
+    			append_dev(div0, button0);
+    			append_dev(button0, t2);
+    			append_dev(div2, t3);
+    			append_dev(div2, div1);
+    			append_dev(div1, button1);
+    			append_dev(button1, t4);
+    			append_dev(button1, t5);
+    			append_dev(div1, t6);
+    			append_dev(div1, button2);
+    			append_dev(button2, t7);
+    			append_dev(div4, t8);
+    			append_dev(div4, div3);
+    			append_dev(div3, h50);
+    			append_dev(h50, t9);
+    			append_dev(h50, t10);
+    			append_dev(div3, t11);
+    			append_dev(div3, h51);
+    			append_dev(h51, t12);
+    			append_dev(h51, t13);
+    			append_dev(div4, t14);
+    			append_dev(div4, br);
+    			append_dev(div4, t15);
+    			append_dev(div4, ul);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].m(ul, null);
@@ -1983,24 +2248,39 @@ var app = (function () {
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(input, "input", /*input_input_handler*/ ctx[10]),
-    					listen_dev(button, "click", /*addTodo*/ ctx[3], false, false, false)
+    					listen_dev(input, "input", /*input_input_handler*/ ctx[14]),
+    					listen_dev(button0, "click", /*addTodo*/ ctx[5], false, false, false),
+    					listen_dev(button1, "click", /*hideOrShow*/ ctx[12], false, false, false),
+    					listen_dev(button2, "click", /*deleteCompleted*/ ctx[13], false, false, false)
     				];
 
     				mounted = true;
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*task*/ 1 && input.value !== /*task*/ ctx[0]) {
-    				set_input_value(input, /*task*/ ctx[0]);
+    			if (dirty & /*task*/ 2 && input.value !== /*task*/ ctx[1]) {
+    				set_input_value(input, /*task*/ ctx[1]);
     			}
 
-    			if (!current || dirty & /*disabled*/ 4) {
-    				prop_dev(button, "disabled", /*disabled*/ ctx[2]);
+    			if (!current || dirty & /*disabled*/ 16) {
+    				prop_dev(button0, "disabled", /*disabled*/ ctx[4]);
     			}
 
-    			if (dirty & /*todos, completeTodo, removeTodo, changePriority, dateChaged*/ 242) {
-    				each_value = /*todos*/ ctx[1];
+    			if ((!current || dirty & /*hide*/ 4) && t4_value !== (t4_value = (/*hide*/ ctx[2] ? 'Show' : 'Hide') + "")) set_data_dev(t4, t4_value);
+
+    			if (!current || dirty & /*completedCount*/ 8 && button1_disabled_value !== (button1_disabled_value = /*completedCount*/ ctx[3] < 1)) {
+    				prop_dev(button1, "disabled", button1_disabled_value);
+    			}
+
+    			if (!current || dirty & /*completedCount*/ 8 && button2_disabled_value !== (button2_disabled_value = /*completedCount*/ ctx[3] < 1)) {
+    				prop_dev(button2, "disabled", button2_disabled_value);
+    			}
+
+    			if ((!current || dirty & /*todos*/ 1) && t10_value !== (t10_value = /*todos*/ ctx[0].length + "")) set_data_dev(t10, t10_value);
+    			if (!current || dirty & /*completedCount*/ 8) set_data_dev(t13, /*completedCount*/ ctx[3]);
+
+    			if (dirty & /*todos, completeTodo, removeTodo, changePriority, dateChaged, hide*/ 965) {
+    				each_value = /*todos*/ ctx[0];
     				validate_each_argument(each_value);
     				group_outros();
     				for (let i = 0; i < each_blocks.length; i += 1) each_blocks[i].r();
@@ -2041,7 +2321,7 @@ var app = (function () {
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div1);
+    			if (detaching) detach_dev(div5);
     			destroy_component(headername);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
@@ -2071,6 +2351,7 @@ var app = (function () {
 
     function instance($$self, $$props, $$invalidate) {
     	let disabled;
+    	let completedCount;
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('App', slots, []);
 
@@ -2105,6 +2386,8 @@ var app = (function () {
     		error: "https://res.cloudinary.com/dxfq3iotg/video/upload/v1557233574/error.mp3"
     	};
 
+    	let hide = false;
+
     	const addTodo = () => {
     		let todo = {
     			id: generateRandomId(),
@@ -2115,35 +2398,36 @@ var app = (function () {
     			dueAt: undefined
     		};
 
-    		$$invalidate(1, todos = [todo, ...todos]);
+    		$$invalidate(0, todos = [todo, ...todos]);
     		var audio = new Audio(sounds.success);
     		audio.play();
-    		$$invalidate(0, task = "");
+    		$$invalidate(1, task = "");
     	};
 
     	const completeTodo = id => {
-    		$$invalidate(1, todos = todos.map(todo => {
+    		$$invalidate(0, todos = todos.map(todo => {
     			if (todo.id === id) {
     				todo.isComplete = !todo.isComplete;
+    				todo.hide = hide;
     			}
 
     			return todo;
     		}));
 
-    		$$invalidate(1, todos = todos.sort(function (a, b) {
+    		$$invalidate(0, todos = todos.sort(function (a, b) {
     			return a.isComplete - b.isComplete;
     		}));
 
     		var audio = new Audio(sounds.info);
     		audio.play();
-    		$$invalidate(0, task = "");
+    		$$invalidate(1, task = "");
     	};
 
     	const removeTodo = todo => {
     		let confirmAction = confirm("Are you sure to delete task: " + todo.name + "?");
 
     		if (confirmAction) {
-    			$$invalidate(1, todos = todos.filter(t => t.id !== todo.id));
+    			$$invalidate(0, todos = todos.filter(t => t.id !== todo.id));
     			var audio = new Audio(sounds.warning);
     			audio.play();
     		}
@@ -2157,11 +2441,11 @@ var app = (function () {
     		}
 
     		todo.priority = priority;
-    		$$invalidate(1, todos);
+    		$$invalidate(0, todos);
     	};
 
     	const dateChaged = t => {
-    		$$invalidate(1, todos);
+    		$$invalidate(0, todos);
     	};
 
     	// FLIP ANIMATION
@@ -2182,6 +2466,20 @@ var app = (function () {
     		}
     	});
 
+    	let hideOrShow = () => {
+    		$$invalidate(2, hide = !hide);
+    	};
+
+    	let deleteCompleted = () => {
+    		let confirmAction = confirm("Are you sure to delete all completed tasks?");
+
+    		if (confirmAction) {
+    			$$invalidate(0, todos = todos.filter(t => t.isComplete === false));
+    			var audio = new Audio(sounds.warning);
+    			audio.play();
+    		}
+    	};
+
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
@@ -2190,7 +2488,7 @@ var app = (function () {
 
     	function input_input_handler() {
     		task = this.value;
-    		$$invalidate(0, task);
+    		$$invalidate(1, task);
     	}
 
     	$$self.$capture_state = () => ({
@@ -2202,6 +2500,7 @@ var app = (function () {
     		todos,
     		task,
     		sounds,
+    		hide,
     		generateRandomId,
     		addTodo,
     		completeTodo,
@@ -2210,14 +2509,21 @@ var app = (function () {
     		dateChaged,
     		send,
     		receive,
+    		hideOrShow,
+    		deleteCompleted,
+    		completedCount,
     		disabled
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ('todos' in $$props) $$invalidate(1, todos = $$props.todos);
-    		if ('task' in $$props) $$invalidate(0, task = $$props.task);
+    		if ('todos' in $$props) $$invalidate(0, todos = $$props.todos);
+    		if ('task' in $$props) $$invalidate(1, task = $$props.task);
     		if ('sounds' in $$props) sounds = $$props.sounds;
-    		if ('disabled' in $$props) $$invalidate(2, disabled = $$props.disabled);
+    		if ('hide' in $$props) $$invalidate(2, hide = $$props.hide);
+    		if ('hideOrShow' in $$props) $$invalidate(12, hideOrShow = $$props.hideOrShow);
+    		if ('deleteCompleted' in $$props) $$invalidate(13, deleteCompleted = $$props.deleteCompleted);
+    		if ('completedCount' in $$props) $$invalidate(3, completedCount = $$props.completedCount);
+    		if ('disabled' in $$props) $$invalidate(4, disabled = $$props.disabled);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2225,14 +2531,20 @@ var app = (function () {
     	}
 
     	$$self.$$.update = () => {
-    		if ($$self.$$.dirty & /*task*/ 1) {
-    			$$invalidate(2, disabled = task.trim() === "");
+    		if ($$self.$$.dirty & /*task*/ 2) {
+    			$$invalidate(4, disabled = task.trim() === "");
+    		}
+
+    		if ($$self.$$.dirty & /*todos*/ 1) {
+    			$$invalidate(3, completedCount = todos.filter(todo => todo.isComplete === true).length);
     		}
     	};
 
     	return [
-    		task,
     		todos,
+    		task,
+    		hide,
+    		completedCount,
     		disabled,
     		addTodo,
     		completeTodo,
@@ -2241,6 +2553,8 @@ var app = (function () {
     		dateChaged,
     		send,
     		receive,
+    		hideOrShow,
+    		deleteCompleted,
     		input_input_handler
     	];
     }
